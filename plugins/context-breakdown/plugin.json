@@ -1,0 +1,11 @@
+{
+  "name": "context-breakdown",
+  "description": "Shows the content mix of the current Copilot CLI session's context window (system prompt, tool definitions, messages, tool calls and results, model output) using the CLI's own /context numbers.",
+  "version": "0.1.0",
+  "author": { "name": "Kjetil JD" },
+  "license": "MIT",
+  "repository": "https://github.com/kjetiljd/copilot-context-breakdown-plugin",
+  "keywords": ["context", "tokens", "tokenomics"],
+  "skills": "skills",
+  "extensions": "extensions"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "copilot-context-breakdown-plugin",
+  "owner": { "name": "Kjetil JD" },
+  "metadata": { "description": "Shows what fills a Copilot CLI session's context window" },
+  "plugins": [
+    {
+      "name": "context-breakdown",
+      "source": "./plugins/context-breakdown",
+      "description": "Shows the content mix of the current Copilot CLI session's context window using the CLI's own /context numbers.",
+      "version": "0.1.0"
+    }
+  ]
+}
