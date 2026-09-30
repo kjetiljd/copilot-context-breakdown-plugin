@@ -645,10 +645,12 @@ def render(ctx: dict, notes: list[str], opts) -> str:
     lines.append(f"{'Total':36} {fmt(tn):>9} {'':6}  {'':16}   {fmt(tc):>13}")
 
     win = ctx.get("window")
-    if win and win.get("promptTokenLimit"):
+    if win and win.get("limit"):
+        label = f"Context window ({win['contextTier']} tier)" if win.get("contextTier") else "Context window"
         lines.append(
-            f"{'Context window':36} {fmt(tn)} / {fmt(win['promptTokenLimit'])} ({pct(tn, win['promptTokenLimit']):.0%})"
-            f"  ·  free {'?' if win['freeSpace'] is None else fmt(win['freeSpace'])}  ·  buffer {fmt(win['buffer'])}  ·  compaction at {fmt(win['compactionThreshold'])}"
+            f"{label:36} {fmt(tn)} / {fmt(win['limit'])} ({pct(tn, win['limit']):.0%})"
+            f"  ·  free {'?' if win['freeSpace'] is None else fmt(win['freeSpace'])}  ·  buffer {fmt(win['buffer'])}"
+            f"  ·  prompt limit {fmt(win['promptTokenLimit'])}  ·  compaction at {fmt(win['compactionThreshold'])}"
         )
 
     if opts.by_tool:
@@ -739,8 +741,19 @@ def main(argv: list[str] | None = None) -> int:
                          f"(e.g. calls vs. reasoning) is estimated ({count.method})")
         if cal.phantom_tokens:
             notes.append(f"{fmt(cal.phantom_tokens)} tokens in messages not found in events.jsonl are classified from the /context label")
-        window = {"promptTokenLimit": ca.get("promptTokenLimit", 0), "compactionThreshold": ca.get("compactionThreshold", 0),
-                  "freeSpace": None if stale else cat.get("freeSpace", 0), "buffer": cat.get("buffer", 0)}
+        cw = snap.get("contextWindow")
+        if cw and cw.get("limit"):
+            # The model's own limits for its context tier, as /context shows them.
+            window = {"limit": cw["limit"], "promptTokenLimit": cw.get("promptTokenLimit", 0),
+                      "compactionThreshold": cw.get("compactionThreshold", 0), "buffer": cw.get("bufferTokens", 0),
+                      "freeSpace": None if stale else max(0, cw["limit"] - ca.get("totalTokens", 0) - cw.get("bufferTokens", 0)),
+                      "contextTier": cw.get("contextTier")}
+        else:
+            window = {"limit": ca.get("limit") or ca.get("promptTokenLimit", 0), "promptTokenLimit": ca.get("promptTokenLimit", 0),
+                      "compactionThreshold": ca.get("compactionThreshold", 0),
+                      "freeSpace": None if stale else cat.get("freeSpace", 0), "buffer": cat.get("buffer", 0), "contextTier": None}
+            notes.append("Context window limits may be the CLI's fallback, not the model's: update the context-breakdown "
+                         "extension and run /extensions reload to get the limits /context shows")
         model = ca.get("modelId") or s.model
         heaviest = sorted(snap.get("heaviestMessages") or [], key=lambda m: -m.get("tokens", 0))
     else:
